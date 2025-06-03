@@ -1,0 +1,54 @@
+
+
+/* ProductSlider 外层容器，占满整屏，隐藏溢出 */
+.product-slider-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+/* slides 列表：横向并排 */
+.product-slider-slides {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+/* 每个 slide（单张卡片所在容器） */
+.product-slider-slide {
+  flex: 0 0 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 下方卡片定位指示器：放在 slider 底部中央 */
+.product-slider-indicator {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  z-index: 5;
+}
+
+/* 非高亮：绿色半透明 + 绿边；高亮：纯绿色 */
+.product-slider-indicator .slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(0, 255, 0, 0.2);
+  border: 1px solid #00ff00;
+  transition: background-color 0.2s;
+}
+.product-slider-indicator .slider-dot.active {
+  background-color: #00ff00;
+  border-color: #00ff00;
+}
