@@ -253,7 +253,6 @@ function ModelViewer({ fileUrl }) {
         className="model-viewer-container"
       >
         {isLoading && <div className="loading-overlay">加载中...</div>}
-        {/* Three.js 会自动插入 <canvas> 在这里 */}
         {/* 右下角全屏按钮 */}
         <button
           className="fullscreen-btn"
