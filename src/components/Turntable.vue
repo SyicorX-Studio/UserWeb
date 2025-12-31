@@ -145,26 +145,24 @@ const fireConfetti = () => {
 const triggerWebhook = async (prize: Prize) => {
   const webhookUrl = 'https://www.feishu.cn/flow/api/trigger-webhook/db8d94317fd960eec7e22bbfe78ee982'
   try {
-    // 尝试使用 fetch 发送
-    // 注意：如果是纯前端直接调用飞书 Webhook 可能会遇到 CORS 问题
     console.log(`正在发送 Webhook: ${webhookUrl}, 奖品: ${prize.name}`);
-    console.log(`如果是跨域失败，请尝试使用以下 curl 命令测试：`);
-    console.log(`Windows (PowerShell):`);
-    console.log(`curl.exe -X POST -H "Content-Type: application/json" -d '{\\"type\\": \\"${prize.name}\\"}' ${webhookUrl}`);
-    console.log(`Mac/Linux/Git Bash:`);
-    console.log(`curl -X POST -H "Content-Type: application/json" -d '{"type": "${prize.name}"}' ${webhookUrl}`);
-
+    
+    // 使用 no-cors 模式 + application/x-www-form-urlencoded 绕过 CORS 限制
+    // 飞书 Webhook 支持 form-urlencoded 格式的数据
     await fetch(webhookUrl, {
       method: 'POST',
+      mode: 'no-cors',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: JSON.stringify({
-        type: prize.name
-      })
+      body: new URLSearchParams({
+        'type': prize.name
+      }).toString()
     })
+    
+    console.log('Webhook 请求已发送 (no-cors 模式，无法获取响应状态)');
   } catch (e) {
-    console.error('Webhook trigger failed (可能是跨域限制):', e)
+    console.error('Webhook trigger failed:', e)
   }
 }
 
