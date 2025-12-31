@@ -143,23 +143,24 @@ const fireConfetti = () => {
 
 // 触发 Webhook
 const triggerWebhook = async (prize: Prize) => {
-  // 使用本地代理地址 (Vite 代理 或 Vercel Serverless Function)
-  const webhookUrl = '/api/webhook'
-  
+  const webhookUrl = 'https://www.feishu.cn/flow/api/trigger-webhook/db8d94317fd960eec7e22bbfe78ee982'
   try {
     console.log(`正在发送 Webhook: ${webhookUrl}, 奖品: ${prize.name}`);
     
+    // 使用 no-cors 模式 + application/x-www-form-urlencoded 绕过 CORS 限制
+    // 飞书 Webhook 支持 form-urlencoded 格式的数据
     await fetch(webhookUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        Accept: 'application/json',
       },
+      mode: 'no-cors',
       body: JSON.stringify({
         type: prize.name
-      })
+      }),
     })
     
-    console.log('Webhook 请求已发送');
+    console.log('Webhook 请求已发送 (no-cors 模式，无法获取响应状态)');
   } catch (e) {
     console.error('Webhook trigger failed:', e)
   }
