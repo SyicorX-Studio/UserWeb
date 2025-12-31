@@ -24,12 +24,30 @@ const isSpinning = ref(false)
 const rotation = ref(0)
 const showResult = ref(false)
 const resultPrize = ref<Prize | null>(null)
-const hasPlayed = ref(false)
+// const hasPlayed = ref(false) // 不再限制单次抽奖
+const userId = ref('')
+const playCount = ref(0)
 
 onMounted(() => {
+  // 初始化用户ID
+  const savedUserId = localStorage.getItem('lottery_user_id')
+  if (savedUserId) {
+    userId.value = savedUserId
+  } else {
+    userId.value = 'user_' + Math.random().toString(36).substr(2, 9)
+    localStorage.setItem('lottery_user_id', userId.value)
+  }
+
+  // 初始化抽奖次数
+  const savedCount = localStorage.getItem('lottery_count')
+  if (savedCount) {
+    playCount.value = parseInt(savedCount, 10)
+  }
+
+  // 恢复上次抽奖结果（可选，仅用于显示，不阻止继续抽奖）
   const savedPrize = localStorage.getItem('lottery_result')
   if (savedPrize) {
-    hasPlayed.value = true
+    // hasPlayed.value = true // 不再需要
     try {
       resultPrize.value = JSON.parse(savedPrize)
     } catch (e) {
@@ -61,7 +79,7 @@ const wheelStyle = computed(() => {
 
 // 抽奖逻辑
 const startLottery = async () => {
-  if (isSpinning.value || hasPlayed.value) return
+  if (isSpinning.value) return // 仅在旋转时禁用
 
   // 1. 计算中奖结果
   const random = Math.random()
@@ -96,6 +114,7 @@ const startLottery = async () => {
   // 公式：targetRotation = 360 - (index * sectorAngle + sectorAngle / 2)
   
   const targetRotation = 360 - (index * sectorAngle + sectorAngle / 2) + randomOffset
+  // 累加旋转角度，确保每次都在当前基础上继续旋转
   const finalRotation = rotation.value + baseRotation + (targetRotation - (rotation.value % 360))
 
   isSpinning.value = true
@@ -106,7 +125,12 @@ const startLottery = async () => {
   setTimeout(() => {
     isSpinning.value = false
     showResult.value = true
-    hasPlayed.value = true
+    // hasPlayed.value = true // 不再限制
+    
+    // 更新次数
+    playCount.value++
+    localStorage.setItem('lottery_count', playCount.value.toString())
+    
     localStorage.setItem('lottery_result', JSON.stringify(selectedPrize))
     
     // 只有中奖才放烟花（排除未中奖）
@@ -144,8 +168,10 @@ const fireConfetti = () => {
 // 触发 Webhook
 const triggerWebhook = async (prize: Prize) => {
   const webhookUrl = 'https://www.feishu.cn/flow/api/trigger-webhook/db8d94317fd960eec7e22bbfe78ee982'
+  const typeContent = `用户 ${userId.value} 在第${playCount.value}次抽奖抽出了一等奖！`.replace('一等奖', prize.name)
+  
   try {
-    console.log(`正在发送 Webhook: ${webhookUrl}, 奖品: ${prize.name}`);
+    console.log(`正在发送 Webhook: ${webhookUrl}, 内容: ${typeContent}`);
     
     // 使用 no-cors 模式 + application/x-www-form-urlencoded 绕过 CORS 限制
     // 飞书 Webhook 支持 form-urlencoded 格式的数据
@@ -156,7 +182,7 @@ const triggerWebhook = async (prize: Prize) => {
       },
       mode: 'no-cors',
       body: JSON.stringify({
-        type: prize.name
+        type: typeContent
       }),
     })
     
@@ -194,8 +220,8 @@ const closeResult = () => {
       <div class="pointer"></div>
       
       <!-- 开始按钮 -->
-      <button class="start-btn" @click="startLottery" :disabled="isSpinning || hasPlayed">
-        {{ isSpinning ? '...' : (hasPlayed ? '已抽奖' : '抽奖') }}
+      <button class="start-btn" @click="startLottery" :disabled="isSpinning">
+        {{ isSpinning ? '...' : '抽奖' }}
       </button>
     </div>
 
@@ -203,6 +229,7 @@ const closeResult = () => {
     <div v-if="showResult || (hasPlayed && !isSpinning && resultPrize)" class="modal-overlay" @click="closeResult">
       <div class="modal-content" @click.stop>
         <h3>{{ hasPlayed && !showResult ? '您已抽过奖啦' : '🎉 抽奖结果 🎉' }}</h3>
+        <p class="user-id-text">兑换码: {{ userId }}</p>
         <p class="result-text">{{ resultPrize?.name }}</p>
         <button @click="closeResult">确定</button>
       </div>
@@ -359,8 +386,19 @@ const closeResult = () => {
 .result-text {
   font-size: 32px;
   color: #D32F2F;
-  margin: 24px 0;
+  margin: 10px 0 24px;
   font-weight: 800;
+}
+
+.user-id-text {
+  font-size: 14px;
+  color: #757575;
+  margin-top: 10px;
+  font-family: monospace;
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 button {
